@@ -17,7 +17,8 @@
 def analizarCadena(entrada):
     charindex = 0
     while charindex < len(entrada):  # Hago la lectura de la cadena.
-        topePila = pila[-1]
+        if len(pila) > 0:
+            topePila = pila[-1]
         caracter = entrada[charindex]
         if topePila == "E":
             E(caracter)
@@ -31,13 +32,18 @@ def analizarCadena(entrada):
             F(caracter)
         elif topePila == caracter:
             pila.pop()  # Elimino el terminal de la pila
-            topePila = pila[-1]  # Actualizo el tope de pila
+            if len(pila) > 0:
+                topePila = pila[-1]  # Actualizo el tope de pila
+            elif caracter == "@":
+                return "Cadena Válida"
+            else:
+                return "Cadena Inválida"
             charindex += 1  # Avanzo al siguiente caracter.
-    if (
+    if (  # Al terminar la cadena se está llendo por el lado del else y no hace nada más, dejando la pila con elementos
         len(pila) == 0
     ):  # TODO:Cuando la cadena se termina de leer y la pila no está vacía cabe la posibilidad
         # de que al reemplazar con lambda se llegue a una aceptación
-        print("Cadena aceptada")
+        return "Cadena aceptada"
 
 
 # Dependiendo del estado que esté en el tope de pila se llamará alguno de los métodos que están abajo.
@@ -56,9 +62,14 @@ def EPrima(caracter):
     elif caracter == "-":
         apilarProduccion("-Te")
     elif (
-        caracter == ")" or caracter == ""
+        caracter == ")"
     ):  # Representa lambda en la tabla. En este caso para ) y para cadena vacía.
-        apilarProduccion("")
+        pila.pop()
+    elif caracter == "@":
+        if len(pila) > 0:
+            pila.pop()
+        else:
+            return "Cadena Inválida"
 
 
 def T(caracter):
@@ -75,9 +86,13 @@ def TPrima(caracter):
         "+",
         "-",
         ")",
-        "",
     ]:  # Representa lambda en la tabla. En este caso para ) y para cadena vacía.
-        apilarProduccion("")
+        pila.pop()
+    elif caracter == "@":
+        if len(pila) > 0:
+            pila.pop()
+        else:
+            return "Cadena Inválida"
 
 
 def F(caracter):
@@ -100,17 +115,14 @@ def apilarProduccion(produccion: str):
         char = produccion[i]
         pila.append(char)
         i -= 1
-    topePila = pila[-1]
-    # for char in produccion:
-    #    pila.append(char)  # Apila en reverso la produccion.
+    # topePila = pila[-1]
 
 
 digitos = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-pila = ["E"]  # Estado raíz del árbol sintáctico.
+pila = ["@", "E"]  # Estado raíz del árbol sintáctico.
 
-entrada = "2+1"
+entrada = "2+5/7@"
 
 
-print(digitos)
-analizarCadena(entrada)
+print(analizarCadena(entrada))
 print(pila)
