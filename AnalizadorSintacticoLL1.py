@@ -1,8 +1,9 @@
+import AnalizadorLexico as AL
+
 # Signo @ como representacion de fin de cadena
 
 
-# Descartar el uso del símbolo lambda(Simplemente borras de la pila) y del símbolo pesos.
-# Existe una manera de simular todos los comportamientos de la tabla LL1.
+# Descartar el uso del símbolo lambda(Simplemente borras de la pila).
 
 
 # PROPUESTA: Codificar todas las combinaciones y comportamientos que existen en la tabla LL1
@@ -11,30 +12,30 @@
 
 # El analizador sintáctico compara el tope con el caracter de la entrada.
 # Si encuentra en el tope de pila un caracter igual al de la entrada, elimina los dos.
-# Por el contrario, utiliza la tabla para realizar operaciones sobre la pila.
+# Por el contrario, realiza operaciones sobre la pila.
 
 
-def analizarCadena(entrada):
+def analizarCadena(entrada):  # Entrada: Lista de tokens
     charindex = 0
-    while charindex < len(entrada):  # Hago la lectura de la cadena.
+    while charindex < len(entrada):  # Hago la lectura de la lista.
         if len(pila) > 0:
             topePila = pila[-1]
-        caracter = entrada[charindex]
+        token = entrada[charindex]
         if topePila == "E":
-            E(caracter)
+            E(token)
         elif topePila == "e":
-            EPrima(caracter)
+            EPrima(token)
         elif topePila == "T":
-            T(caracter)
+            T(token)
         elif topePila == "t":
-            TPrima(caracter)
+            TPrima(token)
         elif topePila == "F":
-            F(caracter)
-        elif topePila == caracter:
+            F(token)
+        elif topePila == token["valor"]:
             pila.pop()  # Elimino el terminal de la pila
             if len(pila) > 0:
                 topePila = pila[-1]  # Actualizo el tope de pila
-            elif caracter == "@":
+            elif token["tipo"] == "FIN_DE_CADENA":
                 return "Cadena Válida"
             else:
                 return "Cadena Inválida"
@@ -47,65 +48,70 @@ def analizarCadena(entrada):
 
 
 # Dependiendo del estado que esté en el tope de pila se llamará alguno de los métodos que están abajo.
-def E(caracter):  # Funcion cuando el tope de pila es "E"
-    if (caracter == "(") or (caracter in digitos) or caracter == "id":
+def E(token):  # Funcion cuando el tope de pila es "E"
+    if (
+        (token["tipo"] == "PARENTESIS_IZQUIERDO")
+        or (token["tipo"] == "INTEGER")
+        or token["tipo"] == "IDENTIFICADOR"
+    ):
         apilarProduccion("Te")
 
 
 # Representaremos E' y T' como "e" y "t" respectivamente para evitar que reconozca el apostrofe como un caracter aparte.
-# TODO: Hay inconvenientes para utilizar id, ya que este se compone de dos caracteres."i" y "d".
 
 
-def EPrima(caracter):
-    if caracter == "+":
+def EPrima(token):
+    if token["tipo"] == "OPERADOR_SUMA":
         apilarProduccion("+Te")
-    elif caracter == "-":
+    elif token["tipo"] == "OPERADOR_RESTA":
         apilarProduccion("-Te")
     elif (
-        caracter == ")"
-    ):  # Representa lambda en la tabla. En este caso para ) y para cadena vacía.
+        token["tipo"] == "PARENTESIS_DERECHO"
+    ):  # Representa lambda en la tabla. En este caso para PARENTESIS_DERECHO
         pila.pop()
-    elif caracter == "@":
+    elif (
+        token["tipo"] == "FIN_DE_CADENA"
+    ):  # En el caso de la cadena vacía o el fin de la cadena
         if len(pila) > 0:
             pila.pop()
         else:
             return "Cadena Inválida"
 
 
-def T(caracter):
-    if (caracter == "(") or (caracter in digitos) or caracter == "id":
+def T(token):
+    if (
+        (token["tipo"] == "PARENTESIS_IZQUIERDO")
+        or (token["tipo"] == "INTEGER")
+        or token["tipo"] == "IDENTIFICADOR"
+    ):
         apilarProduccion("Ft")
 
 
-def TPrima(caracter):
-    if caracter == "*":
+def TPrima(token):
+    if token["tipo"] == "OPERADOR_MULTIPLICACION":
         apilarProduccion("*Ft")
-    elif caracter == "/":
+    elif token["tipo"] == "OPERADOR_DIVISION":
         apilarProduccion("/Ft")
-    elif caracter in [
-        "+",
-        "-",
-        ")",
+    elif token["tipo"] in [
+        "OPERADOR_SUMA",
+        "OPERADOR_RESTA",
+        "PARENTESIS_DERECHO",
     ]:  # Representa lambda en la tabla. En este caso para ) y para cadena vacía.
         pila.pop()
-    elif caracter == "@":
+    elif token["tipo"] == "FIN_DE_CADENA":
         if len(pila) > 0:
             pila.pop()
         else:
             return "Cadena Inválida"
 
 
-def F(caracter):
-    if caracter == "(":
+def F(token):
+    if token["tipo"] == "PARENTESIS_IZQUIERDO":
         apilarProduccion("(E)")
-    elif caracter in digitos:
-        apilarProduccion(
-            caracter
-        )  # TODO: Apilar la producción "num" o "id" es innecesario y genera errores.
-    elif (
-        caracter == "id"
-    ):  # Representa lambda en la tabla. En este caso para ) y para cadena vacía.
-        apilarProduccion("id")
+    elif token["tipo"] == "INTEGER" or token["tipo"] == "IDENTIFICADOR":
+        pila.pop()
+        pila.append(token["valor"])
+        # Apilamos los valores de los terminales encontrados "num" or "id"
 
 
 def apilarProduccion(produccion: str):
@@ -115,13 +121,15 @@ def apilarProduccion(produccion: str):
         char = produccion[i]
         pila.append(char)
         i -= 1
-    # topePila = pila[-1]
 
 
-digitos = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 pila = ["@", "E"]  # Estado raíz del árbol sintáctico.
 
-entrada = "2+5/7@"
+Lexer = AL.AnalizadorLexico("21+4*(id+57)")
+Lexer.generarTokens()
+print(Lexer.getListaTokens())
+
+entrada = Lexer.getListaTokens()
 
 
 print(analizarCadena(entrada))
