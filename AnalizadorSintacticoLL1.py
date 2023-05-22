@@ -1,4 +1,4 @@
-import AnalizadorLexico as AL
+pila = ["@", "E"]  # Estado raíz del árbol sintáctico = "E".
 
 # Signo @ como representacion de fin de cadena
 
@@ -40,21 +40,18 @@ def analizarCadena(entrada):  # Entrada: Lista de tokens
             else:
                 return "Cadena Inválida"
             charindex += 1  # Avanzo al siguiente caracter.
-    if (  # Al terminar la cadena se está llendo por el lado del else y no hace nada más, dejando la pila con elementos
-        len(pila) == 0
-    ):  # TODO:Cuando la cadena se termina de leer y la pila no está vacía cabe la posibilidad
-        # de que al reemplazar con lambda se llegue a una aceptación
-        return "Cadena aceptada"
 
 
 # Dependiendo del estado que esté en el tope de pila se llamará alguno de los métodos que están abajo.
-def E(token):  # Funcion cuando el tope de pila es "E"
+def E(token):
     if (
         (token["tipo"] == "PARENTESIS_IZQUIERDO")
         or (token["tipo"] == "INTEGER")
         or token["tipo"] == "IDENTIFICADOR"
     ):
         apilarProduccion("Te")
+    else:
+        raise ValueError("Cadena inválida")
 
 
 # Representaremos E' y T' como "e" y "t" respectivamente para evitar que reconozca el apostrofe como un caracter aparte.
@@ -65,9 +62,7 @@ def EPrima(token):
         apilarProduccion("+Te")
     elif token["tipo"] == "OPERADOR_RESTA":
         apilarProduccion("-Te")
-    elif (
-        token["tipo"] == "PARENTESIS_DERECHO"
-    ):  # Representa lambda en la tabla. En este caso para PARENTESIS_DERECHO
+    elif token["tipo"] == "PARENTESIS_DERECHO":
         pila.pop()
     elif (
         token["tipo"] == "FIN_DE_CADENA"
@@ -76,6 +71,8 @@ def EPrima(token):
             pila.pop()
         else:
             return "Cadena Inválida"
+    else:
+        raise ValueError("Cadena Inválida")
 
 
 def T(token):
@@ -85,6 +82,8 @@ def T(token):
         or token["tipo"] == "IDENTIFICADOR"
     ):
         apilarProduccion("Ft")
+    else:
+        raise ValueError("Cadena Inválida")
 
 
 def TPrima(token):
@@ -103,6 +102,8 @@ def TPrima(token):
             pila.pop()
         else:
             return "Cadena Inválida"
+    else:
+        raise ValueError("Cadena Inválida")
 
 
 def F(token):
@@ -112,25 +113,14 @@ def F(token):
         pila.pop()
         pila.append(token["valor"])
         # Apilamos los valores de los terminales encontrados "num" or "id"
+    else:
+        raise ValueError("Cadena Inválida")
 
 
 def apilarProduccion(produccion: str):
-    pila.pop()  # Elimina el tope de pila
+    pila.pop()
     i = len(produccion) - 1
     while i >= 0:
         char = produccion[i]
         pila.append(char)
         i -= 1
-
-
-pila = ["@", "E"]  # Estado raíz del árbol sintáctico.
-
-Lexer = AL.AnalizadorLexico("21+4*(id+57)")
-Lexer.generarTokens()
-print(Lexer.getListaTokens())
-
-entrada = Lexer.getListaTokens()
-
-
-print(analizarCadena(entrada))
-print(pila)
